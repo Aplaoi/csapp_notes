@@ -1,0 +1,208 @@
+\section{整数}
+\subsection{编码}
+\subsubsection{整数的表示}
+不同C语言数据类型在32位和64位机器上有不同的取值范围：
+\begin{table}[H]
+    \captionsetup{skip=4pt}
+    \centering
+    \setlength{\arrayrulewidth}{1pt}
+    \begin{tabular}{ccc}
+        \hline
+        \makebox[0.2\textwidth][c]{C语言数据类型} & \makebox[0.2\textwidth][c]{32位机器} & \makebox[0.2\textwidth][c]{64位机器}             \\
+        \noalign{\global\setlength{\arrayrulewidth}{0.5pt}}
+        \hline
+        char                                & $-128\sim 127$                    & $-128\sim127$                                 \\
+        unsigned char                       & $0\sim255$                        & $0\sim255$                                    \\
+        short                               & $-32768\sim32767$                 & $-32768\sim32767$                             \\
+        unsigned short                      & $0\sim65535$                      & $0\sim65535$                                  \\
+        int                                 & $-2147483648\sim2147483647$       & $-2147483648\sim2147483647$                   \\
+        unsigned int                        & $0\sim4294967295 $                & $0\sim4294967295$                             \\
+        long                                & $-2147483648\sim2147483647$       & $-9223372036854775808\sim9223372036854775807$ \\
+        unsigned long                       & $0\sim4294967295$                 & $0\sim18446744073709551615$                   \\
+
+        \noalign{\global\setlength{\arrayrulewidth}{1pt}}
+        \hline
+    \end{tabular}
+    \caption{C语言数据类型的取值范围}
+\end{table}
+\subsubsection{二进制转无符号数和有符号数（补码）}
+假设整数数据类型有\(w\)位，二进制编码用位向量\(\vec{x}=(x_{w - 1},x_{w - 2},\cdots,x_{0})\)表示。
+无符号数编码定义为：\(B2U_{w}(\vec{x})=\sum\limits_{i = 0}^{w - 1}x_{i}2^{i}\)
+有符号数（补码）编码定义为：\(B2T_{w}(\vec{x})=-x_{w - 1}2^{w - 1}+\sum\limits_{i = 0}^{w - 2}x_{i}2^{i}\)
+
+例如：
+\[B2U_{4}([0001])=0\times2^{3}+0\times2^{2}+0\times2^{1}+1\times2^{0}=1\]
+\[B2U_{4}([1011])=1\times2^{3}+0\times2^{2}+1\times2^{1}+1\times2^{0}=11\]
+
+\[B2T_{4}([0001])=-0\times2^{3}+0\times2^{2}+0\times2^{1}+1\times2^{0}=1\]
+\[B2T_{4}([1011])=-1\times2^{3}+0\times2^{2}+1\times2^{1}+1\times2^{0}=-5\]
+
+\subsubsection{等价性与唯一性}
+有符号数和无符号数的非负值编码相同。每个编码都表示唯一的整数值，每个可表示的整数也有唯一的位编码，因此可以反向映射，即\(U2B(x)=B2U^{-1}(x)\)，\(T2B(x)=B2T^{-1}(x)\)。
+\subsubsection{将整数转换为补码}
+如果数字值非负，补码等于该值对应的二进制数（位长不足补0）；否则，其绝对值的二进制数逐位取反，并加1，符号位置1 。例如，假设整数类型位长为4，整数5的补码是0101，整数 -5的补码是1011。
+\subsubsection{可表示的整数范围}
+无符号数范围：\(U_{min}=0\)，\(U_{max}=2^{w}-1\)
+有符号数（补码）范围：\(T_{min}=-2^{w - 1}\)，\(T_{max}=2^{w - 1}-1\)
+\subsubsection{一些重要的数字}
+不同字长下的重要数字如下：
+\begin{table}[H]
+    \captionsetup{skip=4pt}
+    \centering
+    \setlength{\arrayrulewidth}{1pt}
+    \begin{tabular}{cccc}
+        \hline
+        \makebox[0.1\textwidth][c]{Value} & \makebox[0.08\textwidth][c]{Word size \(w = 8\)} & \makebox[0.08\textwidth][c]{Word size \(w = 16\)} & \makebox[0.08\textwidth][c]{Word size \(w = 32\)} \\
+        \noalign{\global\setlength{\arrayrulewidth}{0.5pt}}
+        \hline
+        UMax                              & 0xFF (255)                                       & 0xFFFF (65535)                                    & 0xFFFFFFFF (4294967295)                           \\
+        TMin                              & 0x80 (-128)                                      & 0x8000 (-32768)                                   & 0x80000000 (-2147483648)                          \\
+        TMax                              & 0x7F (127)                                       & 0x7FFF (32767)                                    & 0x7FFFFFFF (2147483647)                           \\
+        -1                                & 0xFF                                             & 0xFFFF                                            & 0xFFFFFFFF                                        \\
+        0                                 & 0x00                                             & 0x0000                                            & 0x00000000                                        \\
+        \noalign{\global\setlength{\arrayrulewidth}{1pt}}
+        \hline
+    \end{tabular}
+    \caption{不同字长下的重要数字}
+\end{table}
+\subsubsection{可表示整数范围的关系}
+\(\vert T_{Min}\vert=T_{Max}+1\)，\(U_{max}=2\times T_{Max}+1\)。有符号数 -1的补码和\(U_{max}\)的编码相同，所有位都为1；0的编码方式在两种表示中都相同，所有位都为0。
+\subsubsection{反码和原码}
+反码和补码的定义类似，区别是符号位的权重为\(-(2^{w - 1}-1)\)。原码和补码的区别是，符号位的作用仅用于决定其他位的位权为正/负。
+\subsection{变换}
+\subsubsection{有符号数转无符号数}
+C语言允许将有符号数转换为无符号数，转换时编码本身没有发生变化。非负数转换后值不变，负数转换为一个大整数。例如：
+\[ux=\begin{cases}x, & x\geq0\\x + 2^{w}, & x<0\end{cases}\]
+\subsubsection{无符号数转有符号数}
+无符号数转有符号数时编码保持不变，转换规则为：
+\[x=\begin{cases}ux, & ux\leq T_{Max}\\ux - 2^{w}, & ux>T_{Max}\end{cases}\]
+\subsubsection{C语言中的有符号数和无符号数}
+缺省情况下，所有的整数常量都是有符号数。如果需要声明无符号数常量，需要增加一个后缀“U”，如0U，4294967259U。
+\subsubsection{C语言中的有符号数和无符号数之间的转换}
+C语言中有显式转换和隐式转换。隐式转换时，编译器会产生Warning，不推荐使用。例如：
+\begin{minted}{c}
+int tx, ty;
+unsigned ux, uy;
+tx = (int)ux; // 显式转换
+uy = (unsigned)ty; // 显式转换
+tx = ux; // 隐式转换
+uy = ty; // 隐式转换
+\end{minted}
+\subsubsection{C语言中的表达式求值}
+如果在一个表达式中混用无符号数和有符号数，有符号数会被隐式转换成无符号数，比较运算也采用此规则。例如：
+\begin{table}[H]
+    \captionsetup{skip=4pt}
+    \centering
+    \setlength{\arrayrulewidth}{1pt}
+    \begin{tabular}{cccc}
+        \hline
+        \makebox[0.1\textwidth][c]{Constant1} & \makebox[0.08\textwidth][c]{Relation} & \makebox[0.1\textwidth][c]{Constant2} & \makebox[0.1\textwidth][c]{Evaluation} \\
+        \noalign{\global\setlength{\arrayrulewidth}{0.5pt}}
+        \hline
+        0                                     & ==                                    & 0U                                    & unsigned                               \\
+        -1                                    & <                                     & 0                                     & signed                                 \\
+        -1                                    & >                                     & 0U                                    & unsigned                               \\
+        2147483647                            & >                                     & -2147483648                           & signed                                 \\
+        2147483647U                           & <                                     & -2147483648                           & unsigned                               \\
+        -1                                    & >                                     & -2                                    & signed                                 \\
+        (unsigned)-1                          & >                                     & -2                                    & unsigned                               \\
+        \noalign{\global\setlength{\arrayrulewidth}{1pt}}
+        \hline
+    \end{tabular}
+    \caption{表达式求值示例（以32位字长为例）}
+\end{table}
+\subsubsection{位扩展}
+无符号数位扩展是零扩展，扩展后最高位的空位补0；有符号数位扩展是符号位扩展，扩展后最高位的空位用原编码的符号位填充。例如：
+\begin{table}[H]
+    \captionsetup{skip=4pt}
+    \centering
+    \setlength{\arrayrulewidth}{1pt}
+    \begin{tabular}{cccc}
+        \hline
+        \makebox[0.08\textwidth][c]{变量} & \makebox[0.08\textwidth][c]{Decimal} & \makebox[0.08\textwidth][c]{Hex} & \makebox[0.15\textwidth][c]{Binary} \\
+        \noalign{\global\setlength{\arrayrulewidth}{0.5pt}}
+        \hline
+        short int x                     & 12345                                & 30 39                            & 00110000 00111001                   \\
+        int ix                          & 12345                                & 00 00 30 39                      & 00000000 00000000110000 00111001    \\
+        short int y                     & -12345                               & CF C7                            & 11001111 11000111                   \\
+        int iy                          & -12345                               & FF FF CF C7                      & 11111111 11111111 11001111 11000111 \\
+        \noalign{\global\setlength{\arrayrulewidth}{1pt}}
+        \hline
+    \end{tabular}
+    \caption{位扩展示例}
+\end{table}
+\subsubsection{位截断}
+无符号数和有符号数的位截断都是将高位的位直接丢弃，只保留低位的位。无符号数截断后的值为 \(x\bmod 2^{k}\)（\(k\) 为截断后保留的位数）；有符号数截断后的值为将截断后的无符号数转换为有符号数。例如：
+\begin{minted}{c}
+int x = 53191;
+short sx = (short)x; // 截断
+int y = sx; // 再扩展
+\end{minted}
+这里 \(x = 53191\)，二进制为 \(0000 0000 0000 0000 1100 1111 1100 0111\)，截断为 \(16\) 位后 \(sx\) 二进制为 \(1100 1111 1100 0111\)，再扩展为 \(32\) 位 \(y\) 二进制为 \(1111 1111 1111 1111 1100 1111 1100 0111\)，值为 \(-12345\)。
+\subsection{运算}
+\subsubsection{无符号数加法}
+对于无符号数 \(x\) 和 \(y\)，如果 \(x + y<2^{w}\)，则正常相加；如果 \(x + y\geq2^{w}\)，则结果为 \((x + y)\bmod 2^{w}\)，即产生了溢出。可以通过判断 \(s<x\) 或 \(s<y\) 来检测溢出（\(s=x + y\)）。例如：
+\begin{table}[H]
+    \captionsetup{skip=4pt}
+    \centering
+    \setlength{\arrayrulewidth}{1pt}
+    \begin{tabular}{cccc}
+        \hline
+        \makebox[0.1\textwidth][c]{x} & \makebox[0.1\textwidth][c]{y} & \makebox[0.1\textwidth][c]{$x + y$} & \makebox[0.1\textwidth][c]{$x + y\bmod 2^{4}$} \\
+        \noalign{\global\setlength{\arrayrulewidth}{0.5pt}}
+        \hline
+        0                             & 0                             & 0                                   & 0                                              \\
+        5                             & 3                             & 8                                   & 8                                              \\
+        11                            & 13                            & 24                                  & 8                                              \\
+        15                            & 15                            & 30                                  & 14                                             \\
+        \noalign{\global\setlength{\arrayrulewidth}{1pt}}
+        \hline
+    \end{tabular}
+    \caption{无符号数加法示例（\(w = 4\)）}
+\end{table}
+\subsubsection{有符号数加法（补码加法）}
+对于有符号数 \(x\) 和 \(y\)，可能会出现正溢出、正常和负溢出三种情况。正溢出时 \(x + y\geq2^{w - 1}\)，结果为 \(x + y-2^{w}\)；正常时 \(-2^{w - 1}\leq x + y<2^{w - 1}\)，结果为 \(x + y\)；负溢出时 \(x + y<-2^{w - 1}\)，结果为 \(x + y + 2^{w}\)。可以通过以下规则检测溢出：
+- 正溢出：\(x>0,y>0,s\leq0\)
+- 负溢出：\(x<0,y<0,s\geq0\)
+例如：
+\begin{table}[H]
+    \captionsetup{skip=4pt}
+    \centering
+    \setlength{\arrayrulewidth}{1pt}
+    \begin{tabular}{cccc}
+        \hline
+        \makebox[0.1\textwidth][c]{x} & \makebox[0.1\textwidth][c]{y} & \makebox[0.1\textwidth][c]{x + y} & \makebox[0.1\textwidth][c]{补码加法结果} \\
+        \noalign{\global\setlength{\arrayrulewidth}{0.5pt}}
+        \hline
+        1                             & 2                             & 3                                 & 3                                  \\
+        5                             & 5                             & 10                                & -6                                 \\
+        -5                            & -5                            & -10                               & 6                                  \\
+        -1                            & -2                            & -3                                & -3                                 \\
+        \noalign{\global\setlength{\arrayrulewidth}{1pt}}
+        \hline
+    \end{tabular}
+    \caption{有符号数加法示例（\(w = 4\)）}
+\end{table}
+\subsubsection{无符号数求反}
+对于无符号数 \(x\)，其反数为 \(2^{w}-x\)（\(x>0\)），\(0\) 的反数为 \(0\)。例如在 \(w = 4\) 时，\(x = 5\)，反数为 \(16 - 5=11\)。
+\subsubsection{有符号数求反（补码求反）}
+对于有符号数 \(x\)，当 \(x>T_{min}\) 时，反数为 \(-x\)；当 \(x = T_{min}\) 时，反数为 \(T_{min}\) 本身。例如在 \(w = 4\) 时，\(T_{min}=-8\)，\(x=-3\) 反数为 \(3\)，\(x = -8\) 反数为 \(-8\)。
+\subsubsection{无符号数乘法}
+无符号数 \(x\) 和 \(y\) 相乘，结果为 \((x\times y)\bmod 2^{w}\)。例如在 \(w = 4\) 时，\(x = 3,y = 5\)，\(x\times y = 15\)，结果就是 \(15\)；若 \(x = 5,y = 6\)，\(x\times y = 30\)，结果为 \(30\bmod 16 = 14\)。
+\subsubsection{有符号数乘法（补码乘法）}
+有符号数 \(x\) 和 \(y\) 相乘，先按无符号数相乘得到结果 \(p=x\times y\)，然后将 \(p\) 截断为 \(w\) 位，再将截断后的无符号数转换为有符号数。例如在 \(w = 4\) 时，\(x=-3,y = 2\)，无符号相乘 \(x\) 看作 \(13\)，\(y = 2\)，\(p = 26\)，截断为 \(4\) 位后为 \(10\)，转换为有符号数为 \(-6\)。
+\subsubsection{移位运算与乘法除法的关系}
+左移 \(k\) 位相当于乘以 \(2^{k}\)。对于无符号数右移 \(k\) 位相当于除以 \(2^{k}\)，采用的是向下取整；对于有符号数右移 \(k\) 位，在大多数编译器下（算术右移）相当于除以 \(2^{k}\) 并向零取整。例如：
+\begin{minted}{c}
+int x = 12;
+int y = x << 2; // y = 12 * 4 = 48
+int z = x >> 2; // z = 12 / 4 = 3
+\end{minted}
+\subsubsection{除以2的幂的优化}
+对于有符号数除以 \(2^{k}\)，为了实现向零取整，可以在右移前加上一个偏置量 \((1<<k)-1\)。相当于右移$k$位后再加1。例如：
+\begin{minted}{c}
+int divide_power2(int x, int k) {
+    int bias = (x < 0)? ((1 << k) - 1) : 0;
+    return (x + bias) >> k;
+}
+\end{minted}

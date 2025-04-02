@@ -1,0 +1,407 @@
+\section{程序的机器级表示:基本操作}
+\subsection{x86寄存器}
+\subsubsection{x86 - 64寄存器}
+x86 - 64架构下，每个寄存器的低4/2/1字节都有唯一的标识。其包含多个寄存器，如 \mintinline{asm}{\%rax}、\mintinline{asm}{\%rbx}、\mintinline{asm}{\%rcx} 等。其中\mintinline{asm}{\%rsp}有特殊用途，一般不在汇编里使用。寄存器具体如下：
+\begin{table}[H]
+    \captionsetup{skip=4pt}
+    \centering
+    \setlength{\arrayrulewidth}{1pt}
+    \begin{tabular}{cccc}
+        \hline
+        63 - 31位 & 31 - 15位 & 15 - 7位 & 7 - 0位 \\
+        \hline
+        \mintinline{asm}{%rax} & \mintinline{asm}{%eax}  & \mintinline{asm}{%ax}   & \mintinline{asm}{%al}   \\
+        \mintinline{asm}{%rbx} & \mintinline{asm}{%ebx}  & \mintinline{asm}{%bx}   & \mintinline{asm}{%bl}   \\
+        \mintinline{asm}{%rcx} & \mintinline{asm}{%ecx}  & \mintinline{asm}{%cx}   & \mintinline{asm}{%cl}   \\
+        \mintinline{asm}{%rdx} & \mintinline{asm}{%edx}  & \mintinline{asm}{%dx}   & \mintinline{asm}{%dl}   \\
+        \mintinline{asm}{%rsi} & \mintinline{asm}{%esi}  & \mintinline{asm}{%si}   & \mintinline{asm}{%sil}  \\
+        \mintinline{asm}{%rdi} & \mintinline{asm}{%edi}  & \mintinline{asm}{%di}   & \mintinline{asm}{%dil}  \\
+        \mintinline{asm}{%rbp} & \mintinline{asm}{%ebp}  & \mintinline{asm}{%bp}   & \mintinline{asm}{%bp}   \\
+        \mintinline{asm}{%rsp} & \mintinline{asm}{%esp}  & \mintinline{asm}{%sp}   & \mintinline{asm}{%spl}  \\
+        \mintinline{asm}{%r8}  & \mintinline{asm}{%r8d}  & \mintinline{asm}{%r8w}  & \mintinline{asm}{%r8b}  \\
+        \mintinline{asm}{%r9}  & \mintinline{asm}{%r9d}  & \mintinline{asm}{%r9w}  & \mintinline{asm}{%r9b}  \\
+        \mintinline{asm}{%r10} & \mintinline{asm}{%r10d} & \mintinline{asm}{%r10w} & \mintinline{asm}{%r10b} \\
+        \mintinline{asm}{%r11} & \mintinline{asm}{%r11d} & \mintinline{asm}{%r11w} & \mintinline{asm}{%r11b} \\
+        \mintinline{asm}{%r12} & \mintinline{asm}{%r12d} & \mintinline{asm}{%r12w} & \mintinline{asm}{%r12b} \\
+        \mintinline{asm}{%r13} & \mintinline{asm}{%r13d} & \mintinline{asm}{%r13w} & \mintinline{asm}{%r13b} \\
+        \mintinline{asm}{%r14} & \mintinline{asm}{%r14d} & \mintinline{asm}{%r14w} & \mintinline{asm}{%r14b} \\
+        \mintinline{asm}{%r15} & \mintinline{asm}{%r15d} & \mintinline{asm}{%r15w} & \mintinline{asm}{%r15b} \\
+        \hline
+    \end{tabular}
+    \caption{x86 - 64寄存器各部分标识}
+\end{table}
+\subsubsection{IA32 (x86 - 32)寄存器}
+IA32（x86 - 32）架构下的寄存器有 \mintinline{asm}{%eax}、\mintinline{asm}{%ecx}、\mintinline{asm}{%edx} 等，其各部分标识如下：
+\begin{table}[H]
+    \captionsetup{skip=4pt}
+    \centering
+    \setlength{\arrayrulewidth}{1pt}
+    \begin{tabular}{cccc}
+        \hline
+        31 - 15位 & 15 - 7位 & 7 - 0位 \\
+        \hline
+        \mintinline{asm}{%eax} & \mintinline{asm}{%ax} & \mintinline{asm}{%al} \\
+        \mintinline{asm}{%ecx} & \mintinline{asm}{%cx} & \mintinline{asm}{%cl} \\
+        \mintinline{asm}{%edx} & \mintinline{asm}{%dx} & \mintinline{asm}{%dl} \\
+        \mintinline{asm}{%ebx} & \mintinline{asm}{%bx} & \mintinline{asm}{%bl} \\
+        \mintinline{asm}{%esi} & \mintinline{asm}{%si} & -                      \\
+        \mintinline{asm}{%edi} & \mintinline{asm}{%di} & -                      \\
+        \mintinline{asm}{%esp} & \mintinline{asm}{%sp} & -                      \\
+        \mintinline{asm}{%ebp} & \mintinline{asm}{%bp} & -                      \\
+        \hline
+    \end{tabular}
+    \caption{IA32 (x86 - 32)寄存器各部分标识}
+\end{table}
+\subsection{数据移动指令}
+\subsubsection{汇编语言格式}
+汇编语言格式为 \mintinline{asm}{[label :] [opcode] [operand 1] [, operand 2]}，即\[\text{标号:} \text{操作码} \text{操作数}1 [\text{,操作数}2]\]。例如，在ATT assembly中：
+\begin{minted}{asm}
+l1: movq $5, %rax
+addq $-16, (%rax)
+\end{minted}
+在Intel assembly中：
+\begin{minted}{asm}
+l1: mov rax, 5
+add QWORD PTR[rax], -16
+\end{minted}
+\subsubsection{操作数类型}
+操作数类型包含：
+\begin{enumerate}[label=\arabic*.]
+    \item \textbf{立即数}：整数常量，如 \mintinline{asm}{\$0x400}、\mintinline{asm}{\$-533} ，和C语言中的常数类似，但需要加前缀 \mintinline{asm}{\$}，其被编码为1、2、4或8个字节。
+    \item \textbf{寄存器}：十六个整数寄存器之一，如 \mintinline{asm}{\%rax}、\mintinline{asm}{\%r13} 。其中 \mintinline{asm}{\%rsp} 有特殊用途，通常不使用，其他寄存器在一些特殊的指令中也会有特殊用途。
+    \item \textbf{存储器}：指向的内存中8个连续字节，由寄存器给出地址，例如 \mintinline{asm}{(\%rax)} ，还有很多其他的“寻址模式”。
+\end{enumerate}
+\subsubsection{movq指令操作数的几种组合}
+\begin{table}[H]
+    \captionsetup{skip=4pt}
+    \centering
+    \setlength{\arrayrulewidth}{1pt}
+    \begin{tabular}{cccc}
+        \hline
+        源操作数Src & 目标操作数Dest & 示例                                     & 等价C语言C Analog                  \\
+        \hline
+        立即数     & 寄存器       & \mintinline{asm}{movq \$0x4, \%rax}    & \mintinline{c}{temp = 0x4;}    \\
+        立即数     & 存储器       & \mintinline{asm}{movq \$-147, (\%rax)} & \mintinline{c}{*p = -147;}     \\
+        寄存器     & 寄存器       & \mintinline{asm}{movq \%rax, \%rdx}    & \mintinline{c}{temp2 = temp1;} \\
+        寄存器     & 存储器       & \mintinline{asm}{movq \%rax, (\%rdx)}  & \mintinline{c}{*p = temp;}     \\
+        存储器     & 寄存器       & \mintinline{asm}{movq (\%rax), \%rdx}  & \mintinline{c}{temp = *p;}     \\
+        \hline
+    \end{tabular}
+    \caption{movq指令操作数组合及等价C语言表达}
+\end{table}
+\subsubsection{数据格式}
+不同C语言类型声明对应不同的数据类型、操作码后缀和大小，具体如下：
+\begin{table}[H]
+    \captionsetup{skip=4pt}
+    \centering
+    \setlength{\arrayrulewidth}{1pt}
+    \begin{tabular}{cccc}
+        \hline
+        C语言类型声明                & 数据类型             & 操作码后缀 & 大小(bytes) \\
+        \hline
+        \mintinline{c}{char}   & Byte             & b     & 1         \\
+        \mintinline{c}{short}  & Word             & w     & 2         \\
+        \mintinline{c}{int}    & Double Word      & l     & 4         \\
+        \mintinline{c}{long}   & Quad Word        & q     & 8         \\
+        \mintinline{c}{char *} & Quad Word        & q     & 8         \\
+        \mintinline{c}{float}  & Single precision & s     & 4         \\
+        \mintinline{c}{Double} & Double precision & l     & 8         \\
+        \hline
+    \end{tabular}
+    \caption{C语言类型与数据格式对应关系}
+\end{table}
+\subsubsection{几种简单的存储器寻址模式}
+\begin{enumerate}[label=\arabic*.]
+    \item \textbf{间接寻址}： \mintinline{asm}{(R)} 表示 \mintinline{asm}{Mem[Reg[R]]} ，寄存器 \mintinline{asm}{R} 指向了存储器的地址，和C语言中的指针作用相同，例如 \mintinline{asm}{movq (\%rcx),\%rax} 。
+    \item \textbf{基地址 + 偏移量寻址}： \mintinline{asm}{D(R)} 表示 \mintinline{asm}{Mem[Reg[R]+D]} ，寄存器 \mintinline{asm}{R} 指定了存储器区域的开始位置，常数 \mintinline{asm}{D} 是偏移量，例如 \mintinline{asm}{movq 8(\%rbp),\%rdx} 。
+\end{enumerate}
+\subsubsection{举例：简单寻址模式（swap函数）}
+以 \mintinline{c}{swap} 函数为例：
+\begin{minted}{c}
+void swap(long *xp, long *yp) 
+{
+    long t0 = *xp;
+    long t1 = *yp; 
+    *xp = t1; 
+    *yp = t0;
+}
+\end{minted}
+其汇编代码如下：
+\begin{minted}{asm}
+swap:
+movq (%rdi), %rax # t0 = *xp
+movq (%rsi), %rdx # t1 = *yp
+movq %rdx, (%rdi) # *xp = t1
+movq %rax, (%rsi) # *yp = t0
+ret
+\end{minted}
+在该函数中， \mintinline{asm}{\%rdi} 存放 \mintinline{c}{xp} 的值， \mintinline{asm}{%rsi} 存放 \mintinline{c}{yp} 的值， \mintinline{asm}{%rax} 用于存放 \mintinline{c}{t0} ， \mintinline{asm}{%rdx} 用于存放 \mintinline{c}{t1} 。通过逐步执行这些指令，实现两个指针所指向的值的交换。
+\subsubsection{完整的存储器寻址模式}
+最通用的形式为 \mintinline{asm}{D(R_{b}, R_{i}, S)} 表示 \mintinline{asm}{Mem[Reg[R_{b}]+S * Reg[R_{i}]+D]} ，其中：
+\begin{enumerate}[label=\arabic*.]
+    \item \mintinline{asm}{D}：常数偏移量，可以为1、2、4或8字节整数。
+    \item \mintinline{asm}{R_{b}}：基地址寄存器，是16个寄存器之一。
+    \item \mintinline{asm}{R_{i}}：变址寄存器，除 \mintinline{asm}{\%rsp} 外的其他寄存器。
+    \item \mintinline{asm}{S}：比例因子，可以为1、2、4或8。
+\end{enumerate}
+还有一些特殊形式，如 \mintinline{asm}{(R_{b}, R_{i})} 表示 \mintinline{asm}{Mem[Reg[R_{b}] + Reg[R_{i}]]} ， \mintinline{asm}{D(R_{b}, R_{i})} 表示 \mintinline{asm}{Mem[Reg[R_{b}]+Reg[R_{i}]+D]} ， \mintinline{asm}{(R_{b}, R_{i}, S)} 表示 \mintinline{asm}{Mem[Reg[R_{b}]+S * Reg[R_{i}]]} 。
+\subsubsection{小练习：地址计算}
+假设 \mintinline{asm}{\%rdx = 0xf000}， \mintinline{asm}{\%rcx = 0x0100} ，不同地址表达式的计算结果如下：
+\begin{table}[H]
+    \captionsetup{skip=4pt}
+    \centering
+    \setlength{\arrayrulewidth}{1pt}
+    \begin{tabular}{ccc}
+        \hline
+        表达式 & 地址计算 & 地址 \\
+        \hline
+        \mintinline{asm}{0x8(%rdx)}      & \mintinline{asm}{0xf000 + 0x8}     & \mintinline{asm}{0xf008}  \\
+        \mintinline{asm}{(%rdx,%rcx)}   & \mintinline{asm}{0xf000 + 0x100}   & \mintinline{asm}{0xf100}  \\
+        \mintinline{asm}{(%rdx,%rcx,4)} & \mintinline{asm}{0xf000 + 4*0x100} & \mintinline{asm}{0xf400}  \\
+        \mintinline{asm}{0x80(,%rdx,2)}  & \mintinline{asm}{2*0xf000 + 0x80}  & \mintinline{asm}{0x1e080} \\
+        \hline
+    \end{tabular}
+    \caption{不同地址表达式的计算结果}
+\end{table}
+\subsection{算术、逻辑运算指令}
+\subsubsection{地址计算指令（leaq）}
+\mintinline{asm}{leaq} 指令格式为 \mintinline{asm}{leaq Src, Dst}，其中 \mintinline{asm}{Src} 是寻址模式表达式，该指令将表达式计算的地址写入 \mintinline{asm}{Dst} 。其用途包括计算地址（计算过程中不需要引用存储器），例如 \mintinline{c}{p=& x[i]} ；还可计算模式为 \mintinline{c}{x + k*y}（ \mintinline{c}{k = 1, 2, 4} 或8）的表达式。例如，对于函数：
+\begin{minted}{c}
+long m12(long x)
+{
+    return x*12;
+}
+\end{minted}
+编译后的汇编指令为：
+\begin{minted}{asm}
+leaq (%rdi,%rdi,2), %rax # t <- x+x*2
+salq $2, %rax # return t<<2
+\end{minted}
+\subsubsection{一些算术运算指令（两操作数指令）}
+两操作数指令（双目运算）的格式及计算方式如下：
+\begin{table}[H]
+    \captionsetup{skip=4pt}
+    \centering
+    \setlength{\arrayrulewidth}{1pt}
+    \begin{tabular}{ccc}
+        \hline
+        格式                                & 计算                                   & 说明                            \\
+        \hline
+        \mintinline{asm}{addq Src, Dest}  & \mintinline{asm}{Dest = Dest + Src}  & -                             \\
+        \mintinline{asm}{subq Src, Dest}  & \mintinline{asm}{Dest = Dest - Src}  & -                             \\
+        \mintinline{asm}{imulq Src, Dest} & \mintinline{asm}{Dest = Dest * Src}  & -                             \\
+        \mintinline{asm}{salq Src, Dest}  & \mintinline{asm}{Dest = Dest << Src} & 也叫 \mintinline{asm}{shlq}     \\
+        \mintinline{asm}{sarq Src, Dest}  & \mintinline{asm}{Dest = Dest >> Src} & 算术右移                          \\
+        \mintinline{asm}{shrq Src, Dest}  & \mintinline{asm}{Dest = Dest >> Src} & 逻辑右移                          \\
+        \mintinline{asm}{xorq Src, Dest}  & \mintinline{asm}{Dest = Dest ^ Src}  & -                             \\
+        \mintinline{asm}{andq Src, Dest}  & \mintinline{asm}{Dest = Dest         & Src}                      & - \\
+        \mintinline{asm}{orq Src, Dest}   & \mintinline{asm}{Dest = Dest | Src}  & -                             \\
+        \hline
+    \end{tabular}
+    \caption{两操作数算术运算指令}
+\end{table}
+需要注意操作数的顺序，并且有符号数和无符号数指令没有区别。
+\subsubsection{一些算术运算指令（单操作数指令）}
+单操作数指令（单目运算）的格式及计算方式如下：
+\begin{table}[H]
+    \captionsetup{skip=4pt}
+    \centering
+    \setlength{\arrayrulewidth}{1pt}
+    \begin{tabular}{cc}
+        \hline
+        格式                          & 计算                                \\
+        \hline
+        \mintinline{asm}{incq Dest} & \mintinline{asm}{Dest = Dest + 1} \\
+        \mintinline{asm}{decq Dest} & \mintinline{asm}{Dest = Dest - 1} \\
+        \mintinline{asm}{negq Dest} & \mintinline{asm}{Dest = - Dest}   \\
+        \mintinline{asm}{notq Dest} & \mintinline{asm}{Dest = ~Dest}    \\
+        \hline
+    \end{tabular}
+    \caption{单操作数算术运算指令}
+\end{table}
+更多指令可查阅教材。
+\subsubsection{需要关注的指令及举例：算术运算}
+需要关注的指令有 \mintinline{asm}{leaq}（地址计算）、 \mintinline{asm}{salq}（左移）、 \mintinline{asm}{imulq}（乘法）等。以函数：
+\begin{minted}{c}
+long arith(long x, long y, long z)
+{
+    long t1 = x+y;
+    long t2 = z+t1;
+    long t3 = x+4;
+    long t4 = y * 48;
+    long t5 = t3 + t4;
+    long rval = t2 * t5;
+    return rval;
+}
+\end{minted}
+其汇编代码为：
+\begin{minted}{asm}
+arith:
+addq %rsi, %rdi       # t1 = x + y
+addq %rdi, %rdx       # t2 = z + t1
+leaq 4(%rdi), %rax    # t3 = x + 4
+leaq (%rsi,%rsi,2), %rcx  # t4a = y + 2*y
+salq $4, %rcx         # t4 = t4a << 4
+addq %rcx, %rax       # t5 = t3 + t4
+imulq %rax, %rdx      # rval = t2 * t5
+movq %rdx, %rax       # return rval
+ret
+\end{minted}
+此函数的汇编代码通过一系列指令实现了函数中各变量的计算。首先将 \mintinline{asm}{x} 和 \mintinline{asm}{y} 相加得到 \mintinline{asm}{t1}，再把 \mintinline{asm}{t1} 与 \mintinline{asm}{z} 相加得到 \mintinline{asm}{t2}。对于 \mintinline{asm}{t3}，使用 \mintinline{asm}{leaq} 指令计算 \mintinline{asm}{x + 4}。计算 \mintinline{asm}{t4} 时，先通过 \mintinline{asm}{leaq} 计算 \mintinline{asm}{y + 2*y} 得到 \mintinline{asm}{t4a}，再左移4位得到 \mintinline{asm}{t4}。然后将 \mintinline{asm}{t3} 和 \mintinline{asm}{t4} 相加得到 \mintinline{asm}{t5}，最后将 \mintinline{asm}{t2} 和 \mintinline{asm}{t5} 相乘得到结果 \mintinline{asm}{rval} 并返回。
+
+\subsection{控制转移指令}
+\subsubsection{条件码寄存器}
+CPU中有一组单个位的条件码寄存器，常用的有：
+\begin{itemize}
+    \item \mintinline{asm}{CF}（进位标志）：无符号运算产生进位时设置。
+    \item \mintinline{asm}{ZF}（零标志）：结果为零时设置。
+    \item \mintinline{asm}{SF}（符号标志）：结果为负时设置。
+    \item \mintinline{asm}{OF}（溢出标志）：有符号运算溢出时设置。
+\end{itemize}
+很多算术和逻辑指令都会设置这些条件码，例如 \mintinline{asm}{addq}、\mintinline{asm}{subq} 等。
+
+\subsubsection{比较和测试指令}
+比较指令 \mintinline{asm}{cmpq} 和测试指令 \mintinline{asm}{testq} 主要用于设置条件码，而不改变任何寄存器或内存的值。
+\mintinline{asm}{cmpq Src2, Src1} 相当于计算 \mintinline{asm}{Src1 - Src2} 并设置条件码，例如：
+\begin{minted}{asm}
+cmpq %rdi, %rsi  # 设置条件码，基于 %rsi - %rdi
+\end{minted}
+\mintinline{asm}{testq Src2, Src1} 相当于计算 \mintinline{asm}{Src1 & Src2} 并设置条件码，例如：
+\begin{minted}{asm}
+testq %rdi, %rdi  # 判断 %rdi 是否为零
+\end{minted}
+
+\subsubsection{条件跳转指令}
+条件跳转指令根据条件码的值来决定是否跳转。例如：
+\begin{itemize}
+    \item \mintinline{asm}{je}（等于跳转）：当 \mintinline{asm}{ZF = 1} 时跳转。
+    \item \mintinline{asm}{jne}（不等于跳转）：当 \mintinline{asm}{ZF = 0} 时跳转。
+    \item \mintinline{asm}{jg}（大于跳转）：有符号比较中，当 \mintinline{asm}{SF = OF} 且 \mintinline{asm}{ZF = 0} 时跳转。
+    \item \mintinline{asm}{jge}（大于等于跳转）：有符号比较中，当 \mintinline{asm}{SF = OF} 时跳转。
+    \item \mintinline{asm}{jl}（小于跳转）：有符号比较中，当 \mintinline{asm}{SF != OF} 时跳转。
+    \item \mintinline{asm}{jle}（小于等于跳转）：有符号比较中，当 \mintinline{asm}{SF != OF} 或 \mintinline{asm}{ZF = 1} 时跳转。
+    \item \mintinline{asm}{ja}（高于跳转）：无符号比较中，当 \mintinline{asm}{CF = 0} 且 \mintinline{asm}{ZF = 0} 时跳转。
+    \item \mintinline{asm}{jae}（高于等于跳转）：无符号比较中，当 \mintinline{asm}{CF = 0} 时跳转。
+    \item \mintinline{asm}{jb}（低于跳转）：无符号比较中，当 \mintinline{asm}{CF = 1} 时跳转。
+    \item \mintinline{asm}{jbe}（低于等于跳转）：无符号比较中，当 \mintinline{asm}{CF = 1} 或 \mintinline{asm}{ZF = 1} 时跳转。
+\end{itemize}
+示例代码：
+\begin{minted}{asm}
+cmpq %rdi, %rsi
+jg greater  # 如果 %rsi > %rdi 则跳转到 greater 标签处
+# 不满足条件时执行的代码
+jmp end
+greater:
+# 满足条件时执行的代码
+end:
+\end{minted}
+
+\subsubsection{无条件跳转指令}
+无条件跳转指令 \mintinline{asm}{jmp} 会直接跳转到指定的位置。可以是直接跳转（给出标签），也可以是间接跳转（通过寄存器或内存地址）。
+直接跳转示例：
+\begin{minted}{asm}
+jmp target  # 跳转到 target 标签处
+target:
+# 跳转后的代码
+\end{minted}
+间接跳转示例：
+\begin{minted}{asm}
+jmp *%rax  # 跳转到 %rax 所指向的地址处
+\end{minted}
+
+\subsubsection{循环和分支结构的实现}
+在汇编中，循环和分支结构通常通过条件码和跳转指令来实现。
+
+\paragraph{while 循环示例}
+C 语言的 while 循环：
+\begin{minted}{c}
+long fact_while(long n) {
+    long result = 1;
+    while (n > 1) {
+        result *= n;
+        n--;
+    }
+    return result;
+}
+\end{minted}
+对应的汇编代码：
+\begin{minted}{asm}
+fact_while:
+movl $1, %eax  # result = 1
+cmpq $1, %rdi  # 比较 n 和 1
+jle done       # 如果 n <= 1 则跳转到 done
+loop:
+imulq %rdi, %rax  # result *= n
+subq $1, %rdi     # n--
+cmpq $1, %rdi     # 比较 n 和 1
+jg loop          # 如果 n > 1 则跳转到 loop
+done:
+movq %rax, %rdi  # 返回 result
+ret
+\end{minted}
+
+\paragraph{if - else 分支示例}
+C 语言的 if - else 语句：
+\begin{minted}{c}
+long absdiff(long x, long y) {
+    if (x < y) {
+        return y - x;
+    } else {
+        return x - y;
+    }
+}
+\end{minted}
+对应的汇编代码：
+\begin{minted}{asm}
+absdiff:
+cmpq %rsi, %rdi  # 比较 x 和 y
+jl less          # 如果 x < y 则跳转到 less
+subq %rsi, %rdi  # x - y
+movq %rdi, %rax  # 返回结果
+ret
+less:
+subq %rdi, %rsi  # y - x
+movq %rsi, %rax  # 返回结果
+ret
+\end{minted}
+
+\subsection{过程调用和栈管理}
+\subsubsection{栈的基本概念}
+栈是一种后进先出（LIFO）的数据结构，在 x86 - 64 中，栈从高地址向低地址增长， \mintinline{asm}{\%rsp} 寄存器指向栈顶。栈主要用于存储局部变量、保存返回地址和寄存器状态等。
+
+\subsubsection{过程调用指令}
+\mintinline{asm}{call} 指令用于调用一个过程，它会将下一条指令的地址（返回地址）压入栈中，并跳转到被调用过程的起始地址。例如：
+\begin{minted}{asm}
+call proc  # 调用 proc 过程
+# 调用返回后执行的代码
+\end{minted}
+\mintinline{asm}{ret} 指令用于从过程中返回，它会从栈中弹出返回地址，并跳转到该地址继续执行。
+
+\subsubsection{栈帧结构}
+每个过程在栈上都有一个栈帧（stack frame），栈帧包含局部变量、保存的寄存器值等。栈帧的底部由 \mintinline{asm}{\%rbp} 寄存器指向（基指针），栈帧的顶部由 \mintinline{asm}{\%rsp} 寄存器指向（栈指针）。
+
+进入一个过程时，通常会保存当前的 \mintinline{asm}{\%rbp} 值，并将 \mintinline{asm}{\%rsp} 的值赋给 \mintinline{asm}{\%rbp}，以建立新的栈帧。例如：
+\begin{minted}{asm}
+pushq %rbp    # 保存旧的 %rbp
+movq %rsp, %rbp  # 建立新的栈帧
+# 过程体代码
+popq %rbp     # 恢复旧的 %rbp
+ret           # 返回
+\end{minted}
+
+\subsubsection{参数传递}
+在 x86 - 64 中，前六个整数或指针参数依次通过 \mintinline{asm}{\%rdi}、\mintinline{asm}{\%rsi}、\mintinline{asm}{\%rdx}、\mintinline{asm}{\%rcx}、\mintinline{asm}{\%r8}、\mintinline{asm}{\%r9} 寄存器传递，更多的参数则通过栈传递。返回值通常通过 \mintinline{asm}{\%rax} 寄存器返回。
+
+例如，一个接收两个参数的函数：
+\begin{minted}{c}
+long add(long a, long b) {
+    return a + b;
+}
+\end{minted}
+调用该函数的汇编代码示例：
+\begin{minted}{asm}
+movq $3, %rdi  # 参数 a = 3
+movq $5, %rsi  # 参数 b = 5
+call add       # 调用 add 函数
+# 返回值在 %rax 中
+\end{minted}

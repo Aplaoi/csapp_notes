@@ -6,6 +6,7 @@
 \usepackage{listings}
 \usepackage{xcolor}
 \usepackage{minted}
+\usepackage{enumitem}
 \usepackage{geometry}
 \geometry{tmargin=.75in, bmargin=.75in, lmargin=.75in, rmargin = .75in}
 \graphicspath{{figures/}}
@@ -44,14 +45,17 @@
 \title{CSAPP笔记}
 \author{apl}
 \date{\today}
-
+\usepackage{hyperref}
 \begin{document}
 \maketitle
 
 \tableofcontents
 \clearpage
+\input{chap0/chap.tex}
 \input{chap1/chap.tex}
-
+\input{chap2/chap.tex}
 \input{chapt3/chap.tex}
+\input{chap4/chap1.tex}
+\input{chap4/chap2.tex}
 
 \end{document}

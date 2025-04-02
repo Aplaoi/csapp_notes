@@ -7,3 +7,4 @@
 *.synctex(busy)
 .vscode
 _minted
+*.minted
