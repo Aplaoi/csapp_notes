@@ -1,0 +1,275 @@
+\section{程序的机器级表示：过程}
+
+在计算机系统中，程序的机器级表示是理解程序如何在底层运行的关键。过程（函数调用）是程序设计中的重要概念，它涉及到控制流的转移、数据的传递以及栈的管理等多个方面。下面将详细介绍程序机器级表示中过程相关的知识。
+
+\subsection{栈的结构}
+
+\subsubsection{x86 - 64 的栈概述}
+
+在 x86 - 64 架构的计算机系统中，栈是一种非常重要的数据结构，用于存储过程调用的上下文信息。栈的一个显著特点是它向低地址方向生长，这意味着当有新的数据入栈时，栈指针会向低地址移动。寄存器 \mintinline{asm}{%rsp} 用于存储栈的最低地址，也就是栈指针，它始终指向栈顶的位置。
+
+栈的基本特性总结如下：
+\begin{table}[H]
+    \captionsetup{skip=4pt}
+    \centering
+    \setlength{\arrayrulewidth}{1pt}
+    \begin{tabular}{c}
+        \hline
+        \makebox[0.8\textwidth][c]{栈的特性}             \\
+        \noalign{\global\setlength{\arrayrulewidth}{0.5pt}}
+        \hline
+        栈底（Stack “Bottom”）位于高地址端，这是栈的起始位置。           \\
+        栈顶（Stack “Top”）位于低地址端，随着数据的入栈和出栈，栈顶的位置会不断变化。 \\
+        栈向下生长（Stack Grows Down），即向低地址方向扩展。当有新的数据需要入栈时，栈指针 \mintinline{asm}{%rsp} 会减小。 \\
+        栈指针（Stack Pointer） \mintinline{asm}{%rsp} 始终指向栈顶，通过操作 \mintinline{asm}{%rsp} 可以实现数据的入栈和出栈操作。 \\
+        \noalign{\global\setlength{\arrayrulewidth}{1pt}}
+        \hline
+    \end{tabular}
+    \caption{x86 - 64 栈的基本特性}
+\end{table}
+
+\subsubsection{x86 - 64 的栈：入栈操作}
+
+入栈操作 \mintinline{asm}{pushq src} 是将一个 64 位的数据从源操作数 \mintinline{asm}{src} 压入栈中。具体步骤如下：
+
+\begin{enumerate}
+    \item 从 \mintinline{asm}{src} 中取出操作数（Fetch operand at \mintinline{asm}{src}）：首先，处理器会从源操作数 \mintinline{asm}{src} 所在的位置读取要入栈的数据。这个源操作数可以是寄存器或者内存地址。
+    \item \mintinline{asm}{%rsp} 减 8（Decrement \mintinline{asm}{%rsp} by 8）：由于在 x86 - 64 架构中，每个数据单元是 64 位（8 字节），所以在入栈时，栈指针 \mintinline{asm}{%rsp} 需要减去 8，以指向新的栈顶位置。
+    \item 将操作数的值写入 \mintinline{asm}{%rsp} 指向的地址（Write operand at address given by \mintinline{asm}{%rsp}）：最后，将从 \mintinline{asm}{src} 中取出的数据写入到新的栈顶位置，也就是 \mintinline{asm}{%rsp} 所指向的内存地址。
+\end{enumerate}
+
+下面是一个简单的入栈操作示例代码：
+\begin{minted}{asm}
+pushq %rax ; 将寄存器 %rax 中的值入栈
+\end{minted}
+
+在这个示例中，首先处理器会读取寄存器 \mintinline{asm}{%rax} 中的值，然后将栈指针 \mintinline{asm}{%rsp} 减 8，最后将 \mintinline{asm}{%rax} 中的值写入到新的栈顶位置。
+
+\subsubsection{x86 - 64 的栈：出栈操作}
+
+出栈操作 \mintinline{asm}{popq dest} 是将栈顶的 64 位数据弹出并写入到目标操作数 \mintinline{asm}{dest} 中。具体步骤如下：
+
+\begin{enumerate}
+    \item 从 \mintinline{asm}{%rsp} 指向的地址中取出值（Fetch value in \mintinline{asm}{%rsp}）：处理器会从当前栈指针 \mintinline{asm}{%rsp} 所指向的内存地址读取栈顶的数据。
+    \item 将值写入 \mintinline{asm}{dest}（Write value to operand \mintinline{asm}{dest}）：将读取到的栈顶数据写入到目标操作数 \mintinline{asm}{dest} 中，目标操作数可以是寄存器或者内存地址。
+    \item \mintinline{asm}{%rsp} 加 8（Increment \mintinline{asm}{%rsp} by 8）：由于已经将栈顶的数据弹出，栈指针需要加 8，以指向新的栈顶位置。
+
+\end{enumerate}
+
+下面是一个简单的出栈操作示例代码：
+\begin{minted}{asm}
+popq %rbx ; 将栈顶的值弹出并写入寄存器 %rbx
+\end{minted}
+
+在这个示例中，处理器会先读取栈顶的值，然后将该值写入到寄存器 \mintinline{asm}{%rbx} 中，最后将栈指针 \mintinline{asm}{%rsp} 加 8。
+
+\subsection{过程调用规范}
+
+\subsubsection{控制流转移}
+
+过程调用是程序中实现代码复用和模块化的重要手段。在 x86 - 64 架构中，过程调用通过 \mintinline{asm}{call label} 指令实现，而过程返回则使用 \mintinline{asm}{ret} 指令。
+
+\mintinline{asm}{call label} 指令的执行过程如下：
+\begin{enumerate}
+    \item 将返回地址压入栈：返回地址是紧接在 \mintinline{asm}{call} 指令之后的指令所在的地址。当执行 \mintinline{asm}{call} 指令时，处理器会将这个返回地址压入栈中，以便在过程执行完毕后能够返回到正确的位置继续执行。
+    \item 跳转至 \mintinline{asm}{label} 标签处的过程代码开始位置：处理器会跳转到 \mintinline{asm}{label} 所指定的地址处，开始执行被调用过程的代码。
+\end{enumerate}
+
+\mintinline{asm}{ret} 指令的执行过程如下：
+
+\begin{enumerate}
+    \item 从栈中弹出返回地址：处理器会从栈顶弹出之前压入的返回地址。
+    \item 跳转至该地址：根据弹出的返回地址，处理器会跳转到相应的位置继续执行程序。
+\end{enumerate}
+
+下面是一个完整的过程调用示例代码：
+\begin{minted}{asm}
+; 示例代码：控制流转移
+void multstore(long x, long y, long *dest) {
+    long t = mult2(x, y);
+    *dest = t;
+}
+0000000000400540 <multstore>:
+    400540: push %rbx        # Save %rbx
+    400541: mov %rdx,%rbx    # Save dest
+    400544: callq 400550 <mult2> # mult2(x,y)
+    400549: mov %rax,(%rbx)  # Save at dest
+    40054c: pop %rbx        # Restore %rbx
+    40054d: retq            # Return
+
+long mult2(long a, long b) {
+    long s = a * b;
+    return s;
+}
+0000000000400550 <mult2>:
+    400550: mov %rdi,%rax    # a 
+    400553: imul %rsi,%rax   # a * b
+    400557: retq            # Return
+\end{minted}
+
+在这个示例中，\mintinline{c}{multstore} 函数调用了 \mintinline{c}{mult2} 函数。当执行到 \mintinline{asm}{callq 400550 <mult2>} 指令时，会将下一条指令（\mintinline{asm}{400549}）的地址压入栈中，然后跳转到 \mintinline{c}{mult2} 函数的起始地址（\mintinline{asm}{400550}）开始执行。当 \mintinline{c}{mult2} 函数执行完毕，执行 \mintinline{asm}{retq} 指令时，会从栈中弹出返回地址（\mintinline{asm}{400549}），然后跳转到该地址继续执行 \mintinline{c}{multstore} 函数的后续代码。
+
+\subsubsection{数据传递}
+
+在 x86 - 64 架构中，数据传递遵循一定的规则。前 6 个参数通过寄存器传递，具体如下：
+
+\begin{table}[H]
+    \captionsetup{skip=4pt}
+    \centering
+    \setlength{\arrayrulewidth}{1pt}
+    \begin{tabular}{c}
+        \hline
+        \makebox[0.8\textwidth][c]{用于传递参数的寄存器} \\
+        \noalign{\global\setlength{\arrayrulewidth}{0.5pt}}
+        \hline
+        \mintinline{asm}{%rdi}：用于传递第一个参数。 \\
+        \mintinline{asm}{%rsi}：用于传递第二个参数。 \\
+        \mintinline{asm}{%rdx}：用于传递第三个参数。 \\
+        \mintinline{asm}{%rcx}：用于传递第四个参数。 \\
+        \mintinline{asm}{%r8}：用于传递第五个参数。 \\
+        \mintinline{asm}{%r9}：用于传递第六个参数。 \\
+        \noalign{\global\setlength{\arrayrulewidth}{1pt}}
+        \hline
+    \end{tabular}
+    \caption{x86 - 64 中传递前 6 个参数的寄存器}
+\end{table}
+
+返回值通过 \mintinline{asm}{%rax} 寄存器传递。如果参数数量超过 6 个，剩余的参数则通过栈传递。并且，只有在需要时栈才会分配空间来存储这些额外的参数。
+
+下面是一个参数传递的示例代码：
+\begin{minted}{c}
+long add_five_numbers(long a, long b, long c, long d, long e) {
+    return a + b + c + d + e;
+}
+
+int main() {
+    long result = add_five_numbers(1, 2, 3, 4, 5);
+    return 0;
+}
+\end{minted}
+
+对应的汇编代码中，参数 \mintinline{c}{1} 会被传递到 \mintinline{asm}{%rdi}，参数 \mintinline{c}{2} 会被传递到 \mintinline{asm}{%rsi}，参数 \mintinline{c}{3} 会被传递到 \mintinline{asm}{%rdx}，参数 \mintinline{c}{4} 会被传递到 \mintinline{asm}{%rcx}，参数 \mintinline{c}{5} 会被传递到 \mintinline{asm}{%r8}。函数执行完毕后，返回值会存储在 \mintinline{asm}{%rax} 中。
+
+\subsubsection{存储管理}
+
+在过程执行时，会为该过程分配栈帧空间。栈帧是栈中的一个区域，用于存储过程调用的相关信息，包括参数、局部变量、返回地址等。过程返回前，会释放栈帧空间，以便后续的过程调用使用。
+
+栈帧的管理主要通过栈指针 \mintinline{asm}{%rsp} 和可选的帧指针 \mintinline{asm}{%rbp} 进行。栈指针 \mintinline{asm}{%rsp} 始终指向栈顶，而帧指针 \mintinline{asm}{%rbp} 可以指向栈帧的底部，方便访问栈帧中的数据。
+
+栈帧的内容通常包括以下几个部分：
+\begin{table}[H]
+    \captionsetup{skip=4pt}
+    \centering
+    \setlength{\arrayrulewidth}{1pt}
+    \begin{tabular}{cc}
+        \hline
+        \makebox[0.4\textwidth][c]{栈帧内容}    & \makebox[0.4\textwidth][c]{说明}                                                        \\
+        \noalign{\global\setlength{\arrayrulewidth}{0.5pt}}
+        \hline
+        参数（Arguments）                       & 即将要调用的函数的参数或本次调用的参数。如果参数数量超过 6 个，超出部分会存储在栈帧中。                                         \\
+        本地变量（Local variables）               & 在寄存器中保存不下的变量。例如，一些数组或者复杂的数据结构通常会存储在栈帧中。                                               \\
+        保存的寄存器上下文信息（Saved register context） & 保存过程中使用的寄存器的值，以便恢复。当一个过程需要使用某些寄存器，但又不希望破坏这些寄存器原来的值时，会将这些寄存器的值保存到栈帧中，在过程返回前再恢复。        \\
+        指向调用者的栈帧底部的指针（Old frame pointer，可选） & 用于回溯调用栈，可用于访问调用者栈帧中的数据。通过帧指针 \mintinline{asm}{                                        %rbp} 可以方便地找到调用者的栈帧，从而实现对调用者栈帧中数据的访问。 \\
+        返回地址（Return address）                & 调用 \mintinline{asm}{call} 指令时入栈，用于过程返回时跳转。当过程执行完毕，需要返回到调用者继续执行时，会从栈帧中取出返回地址，然后跳转到该地址。 \\
+        \noalign{\global\setlength{\arrayrulewidth}{1pt}}
+        \hline
+    \end{tabular}
+    \caption{x86 - 64/Linux 栈帧内容}
+\end{table}
+
+\subsubsection{寄存器使用惯例}
+
+在 x86 - 64 架构中，寄存器分为“调用者保护”和“被调用者保护”两类，这是为了保证在过程调用过程中寄存器的值不会被意外修改。
+
+“调用者保护”的寄存器，调用者在调用前把临时数据保存到自己的栈帧中。这意味着，如果一个过程（调用者）需要使用这些寄存器，并且希望在调用其他过程后这些寄存器的值仍然保持不变，那么它需要在调用之前将这些寄存器的值保存到自己的栈帧中，在调用返回后再恢复这些值。
+
+“被调用者保护”的寄存器，被调用者在使用前将临时数据保存至自己的栈帧中，并在返回前恢复这些数据。也就是说，当一个过程（被调用者）需要使用这些寄存器时，它需要先将这些寄存器的值保存到自己的栈帧中，在使用完后再恢复这些值，以确保调用者看到的这些寄存器的值没有被改变。
+
+具体的寄存器分类如下：
+\begin{table}[H]
+    \captionsetup{skip=4pt}
+    \centering
+    \setlength{\arrayrulewidth}{1pt}
+    \begin{tabular}{cc}
+        \hline
+        \makebox[0.4\textwidth][c]{寄存器类别} & \makebox[0.4\textwidth][c]{寄存器列表} \\
+        \noalign{\global\setlength{\arrayrulewidth}{0.5pt}}
+        \hline
+        调用者保护（Caller - saved）             & \mintinline{asm}{                 %rax}, \mintinline{asm}{%rdi}, \mintinline{asm}{%rsi}, \mintinline{asm}{%rdx}, \mintinline{asm}{%rcx}, \mintinline{asm}{%r8}, \mintinline{asm}{%r9}, \mintinline{asm}{%r10}, \mintinline{asm}{%r11} \\
+        被调用者保护（Callee - saved）            & \mintinline{asm}{                 %rbx}, \mintinline{asm}{%r12}, \mintinline{asm}{%r13}, \mintinline{asm}{%r14}, \mintinline{asm}{%rbp}, \mintinline{asm}{%rsp} \\
+        \noalign{\global\setlength{\arrayrulewidth}{1pt}}
+        \hline
+    \end{tabular}
+    \caption{x86 - 64 Linux 中寄存器的保护类别}
+\end{table}
+
+下面是一个寄存器使用惯例的示例代码：
+\begin{minted}{c}
+void function1() {
+    long temp = 10;
+    function2();
+    // 此时 temp 的值仍然是 10，因为 %rax 是调用者保护寄存器
+}
+
+void function2() {
+    long result = 20;
+    // 可以安全地使用 %rax 寄存器，因为调用者已经保存了 %rax 的值
+    // ...
+}
+\end{minted}
+
+在这个示例中，\mintinline{c}{function1} 是调用者，\mintinline{c}{function2} 是被调用者。如果 \mintinline{c}{function1} 需要使用 \mintinline{asm}{%rax} 寄存器，并且希望在调用 \mintinline{c}{function2} 后 \mintinline{asm}{%rax} 的值不变，那么它需要在调用之前保存 \mintinline{asm}{%rax} 的值。而 \mintinline{c}{function2} 可以安全地使用 \mintinline{asm}{%rax} 寄存器，因为调用者已经处理了 \mintinline{asm}{%rax} 的保存和恢复。
+
+\subsection{递归}
+
+递归是一种函数调用自身的编程技术，它在解决一些复杂问题时非常有用。下面以计算无符号长整型数中 1 的个数的递归函数 \mintinline{c}{pcount_r} 为例进行说明。
+
+\subsubsection{递归函数的代码实现}
+
+\begin{minted}{c}
+/* Recursive popcount */
+long pcount_r(unsigned long x) {
+    if (x == 0)
+        return 0;
+    else
+        return (x & 1) + pcount_r(x >> 1);
+}
+\end{minted}
+
+这个函数的功能是计算无符号长整型数 \mintinline{c}{x} 中二进制表示下 1 的个数。如果 \mintinline{c}{x} 为 0，则返回 0；否则，返回 \mintinline{c}{x} 的最低位（\mintinline{c}{x & 1}）加上 \mintinline{c}{x} 右移一位后剩余部分中 1 的个数（通过递归调用 \mintinline{c}{pcount_r(x >> 1)} 计算）。
+
+\subsubsection{递归函数的汇编代码分析}
+
+对应的汇编代码如下：
+\begin{minted}{asm}
+pcount_r:
+    movl $0, %eax
+    testq %rdi, %rdi
+    je .L6
+    pushq %rbx
+    movq %rdi, %rbx
+    andl $1, %ebx
+    shrq %rdi # (by 1)
+    call pcount_r
+    addq %rbx, %rax
+    popq %rbx
+.L6:
+    rep; ret
+\end{minted}
+
+下面对这段汇编代码进行详细分析：
+\begin{enumerate}
+    \item \mintinline{asm}{movl $0, %eax}：将寄存器 \mintinline{asm}{%eax} 初始化为 0，用于存储最终的结果。
+    \item \mintinline{asm}{testq %rdi, %rdi}：对寄存器 \mintinline{asm}{%rdi} 进行按位与操作，用于判断 \mintinline{asm}{%rdi} 是否为 0。如果为 0，则设置相应的标志位。
+    \item \mintinline{asm}{je .L6}：如果 \mintinline{asm}{%rdi} 为 0（即 \mintinline{c}{x} 为 0），则跳转到标签 \mintinline{asm}{.L6} 处，直接返回 0。
+    \item \mintinline{asm}{pushq %rbx}：将寄存器 \mintinline{asm}{%rbx} 的值压入栈中，因为 \mintinline{asm}{%rbx} 是被调用者保护寄存器，需要在使用前保存其值。
+    \item \mintinline{asm}{movq %rdi, %rbx}：将参数 \mintinline{c}{x}（存储在 \mintinline{asm}{%rdi} 中）复制到寄存器 \mintinline{asm}{%rbx} 中。
+    \item \mintinline{asm}{andl $1, %ebx}：对 \mintinline{asm}{%ebx} 的最低位进行按位与操作，得到 \mintinline{c}{x} 的最低位。
+    \item \mintinline{asm}{shrq %rdi}：将 \mintinline{asm}{%rdi} 中的值右移一位，相当于 \mintinline{c}{x >> 1}。
+    \item \mintinline{asm}{call pcount_r}：递归调用 \mintinline{c}{pcount_r} 函数，计算 \mintinline{c}{x >> 1} 中 1 的个数。
+    \item \mintinline{asm}{addq %rbx, %rax}：将 \mintinline{c}{x} 的最低位（存储在 \mintinline{asm}{%rbx} 中）加到结果寄存器 \mintinline{asm}{%rax} 中。
+    \item \mintinline{asm}{popq %rbx}：从栈中弹出之前保存的 \mintinline{asm}{%rbx} 的值，恢复 \mintinline{asm}{%rbx} 的原始值。
+    \item \mintinline{asm}{rep; ret}：返回调用者，将结果存储在 \mintinline{asm}{%rax} 中。
+\end{enumerate}
+
+递归函数的处理和普通函数调用类似，栈帧为每次函数调用提供私有的存储空间，用于保存寄存器和局部变量、返回地址等。寄存器使用惯例保证了一次函数调用不会破坏其他函数的数据，栈的后进先出特性也适用于递归和相互递归的情况。

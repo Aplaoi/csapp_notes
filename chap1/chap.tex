@@ -130,7 +130,7 @@ movl $0, -4(%ebp)   // 值直接变为0
     \setlength{\arrayrulewidth}{1pt}
     \begin{tabular}{cccc}
         \hline
-        \makebox[0.15\textwidth][c]{C 语言数据类型} & \makebox[0.15\textwidth][c]{典型 32 位系统} & \makebox[0.15\textwidth][c]{典型 64 位系统} & \makebox[0.15\textwidth][c]{x86 - 64} \\
+        \makebox[0.15\textwidth][c]{数据类型} & \makebox[0.15\textwidth][c]{32 位系统} & \makebox[0.15\textwidth][c]{64 位系统} & \makebox[0.15\textwidth][c]{x86 - 64} \\
         \noalign{\global\setlength{\arrayrulewidth}{0.5pt}}
         \hline
         char                                  & 1                                      & 1                                      & 1                                     \\
@@ -146,58 +146,43 @@ movl $0, -4(%ebp)   // 值直接变为0
     \caption{C 语言数据类型位宽}
 \end{table}
 \subsubsection{字节序}
-有小端序（Little endian）和大端序（Big endian）两种。小端序如 Intel，低地址存放低位数据，高地址存放高位数据；大端序如 IBM、Sun Microsystem（Oracle），低地址存放高位数据，高地址存放低位数据。例如，对于 0x1234567 ：
-\begin{table}[H]
-    \captionsetup{skip=4pt}
+有小端序（Little endian）和大端序（Big endian）两种。小端序低地址存放低位数据，高地址存放高位数据；大端序低地址存放高位数据，高地址存放低位数据。例如，对于 0x1234567 ：
+\begin{figure}[H]
     \centering
-    \setlength{\arrayrulewidth}{1pt}
-    \begin{tabular}{ccccc}
-        \hline
-        \multicolumn{5}{|c|}{地址}                                                                                                                                       \\
-        \cline{1-5}
-        \makebox[0.1\textwidth][c]{} & \makebox[0.1\textwidth][c]{低地址} & \makebox[0.1\textwidth][c]{} & \makebox[0.1\textwidth][c]{} & \makebox[0.1\textwidth][c]{高地址} \\
-        \noalign{\global\setlength{\arrayrulewidth}{0.5pt}}
-        \hline
-        大端序                          & \(0x100: 0x12\)                 & \(0x101: 0x34\)              & \(0x102: 0x56\)              & \(0x103: 0x07\)                 \\
-        小端序                          & \(0x100: 0x07\)                 & \(0x101: 0x56\)              & \(0x102: 0x34\)              & \(0x103: 0x12\)                 \\
-        \noalign{\global\setlength{\arrayrulewidth}{1pt}}
-        \hline
-    \end{tabular}
-    \caption{字节序示例}
-\end{table}
+    \captionsetup{skip=4pt}
+    \includegraphics[width=10cm]{7.png}
+    \caption{小端序和大端序} 
+\end{figure}
+
 \subsubsection{探索数据在存储器中的存储方式}
 通过以下代码可以打印各变量的字节表示形式：
 \begin{minted}{c}
 #include <stdio.h>
-typedef unsigned char *byte_pointer;
-void show_bytes(byte_pointer start,int len)
-{
+typedef unsigned char *byte_pointer;    //unsigned char占用一个字节，可以做到逐字节访问内存
+void show_bytes(byte_pointer start,int len){
     int i;
     for(i = 0; i < len; i++)
         printf("%.2x ",start[i]);
     printf("\n");
 }
-void show_int(int x)
-{
+void show_int(int x){
     show_bytes((byte_pointer)&x, sizeof(int));
 }
-void show_float(float x)
-{
+void show_float(float x){
     show_bytes((byte_pointer)&x, sizeof(float));
 }
-void show_pointer(void *x)
-{
+void show_pointer(void *x){
     show_bytes((byte_pointer)x, sizeof(void*));
 }
 \end{minted}
-在 Linux32/64（小端）、Win32（小端）和 Sun（32 位，大端）系统下的测试结果如下：
+在 Linux32/64（小端）、Win32（小端）和 Sun（32 位，大端）系统下的测试数字 12345 （0x00003039）结果如下。对于指针的存储，不同的编译器和计算机可能会分配不同的地址，甚至每一次运行时得到的结果都不相同。
 \begin{table}[H]
     \captionsetup{skip=4pt}
     \centering
     \setlength{\arrayrulewidth}{1pt}
     \begin{tabular}{cccc}
         \hline
-        \makebox[0.1\textwidth][c]{机器} & \makebox[0.1\textwidth][c]{值}           & \makebox[0.1\textwidth][c]{类型} & \makebox[0.2\textwidth][c]{字节（十六进制）} \\
+        \makebox[0.1\textwidth][c]{机器} & \makebox[0.1\textwidth][c]{值}           & \makebox[0.1\textwidth][c]{类型} & \makebox[0.2\textwidth][c]{字节（从左到右地址升高）} \\
         \noalign{\global\setlength{\arrayrulewidth}{0.5pt}}
         \hline
         Linux 32                       & 12345                                   & int                            & 39 30 00 00                          \\
@@ -208,24 +193,18 @@ void show_pointer(void *x)
         Windows                        & 12345.0                                 & float                          & 00 e4 40 46                          \\
         Sun                            & 12345.0                                 & float                          & 46 40 e4 00                          \\
         Linux 64                       & 12345.0                                 & float                          & 00 e4 40 46                          \\
-        Linux 32                       & \(      \& ival\)                       & int *                          & e4 f9 ff bf                          \\
-        Windows                        & \(                            \& ival\) & int *                          & b4 cc 22 00                          \\
-        Sun                            & \(                            \& ival\) & int *                          & ef ff fa 0c                          \\
-        Linux 64                       & \(                            \& ival\) & int *                          & b8 11 e5 ff ff 7f 00 00              \\
+        Linux 32                       &       \& ival                       & int *                          & e4 f9 ff bf                          \\
+        Windows                        &                             \& ival & int *                          & b4 cc 22 00                          \\
+        Sun                            &                             \& ival & int *                          & ef ff fa 0c                          \\
+        Linux 64                       &                             \& ival & int *                          & b8 11 e5 ff ff 7f 00 00              \\
         \noalign{\global\setlength{\arrayrulewidth}{1pt}}
         \hline
     \end{tabular}
     \caption{不同系统下数据存储测试结果}
 \end{table}
-\subsubsection{指针的存储方法}
-不同的编译器和计算机可能会分配不同的地址，甚至每一次运行时得到的结果都不相同。例如，在 x86 - 64、Sun、IA32 环境下：
-\begin{minted}{c}
-int B = -15213; 
-int *P = &B;
-\end{minted}
+
 \subsubsection{字符串的表示}
-C 语言的字符串使用 char 数组表示，每个字符都被编码成 ASCII 码，是一个 7 比特的字符编码集（扩展集为 8 比特）。字符“0”的编码是 \(0x30\)，数字字符 \(i\) 的编码是 \(0x30 + i\) 。字符串的结尾应为空字符，即 ASCII 编码为 0 。字符串的表示与字节序无关，大小端兼容。
-\subsubsection{程序的表示}
-不同类型的机器使用不同的且不兼容的指令和指令编码。在相同处理器不同的操作系统中，由于编码规范存在差异，同样代码所生成的程序也不是二进制兼容的，程序很少能够在不同类型机器和不同操作系统中实现二进制水平上移植。
+C 语言的字符串使用 char 数组表示，每个字符都被编码成 ASCII 码，是一个 7 比特的字符编码集（扩展集为 8 比特）。字符“0”的编码是 0x30，数字字符 \(i\) 的编码是 0x30 \(+ i\) 。字符串的结尾应为空字符，即 ASCII 编码为 0 。字符串的表示与字节序无关，大小端兼容，因为每个 char 只占用一个字节，单独存储时和大小端无关
+
 \subsubsection{小知识：PE 和 ELF 格式}
 Windows 操作系统下常用的可执行文件格式是 PE（Portable Executable）；Unix 家族（含 Linux）操作系统下可执行文件格式为 ELF（Executable and Linkable Format）。

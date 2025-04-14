@@ -4,6 +4,8 @@
 \usepackage{booktabs}
 \usepackage{graphicx}
 \usepackage{listings}
+\usepackage{multicol}
+\usepackage{longtable}
 \usepackage{xcolor}
 \usepackage{minted}
 \usepackage{enumitem}
@@ -33,10 +35,9 @@
 
 \setminted{
     fontsize=\footnotesize,
-    breaklines,
-    linenos
+    breaklines
 }
-
+\usemintedstyle{xcode}
 \usepackage{titlesec}
 \usepackage{titletoc}
 
@@ -46,6 +47,11 @@
 \author{apl}
 \date{\today}
 \usepackage{hyperref}
+\hypersetup{
+colorlinks=true,
+linkcolor=black
+}
+
 \begin{document}
 \maketitle
 
@@ -54,8 +60,10 @@
 \input{chap0/chap.tex}
 \input{chap1/chap.tex}
 \input{chap2/chap.tex}
-\input{chapt3/chap.tex}
+\input{chap3/chap.tex}
 \input{chap4/chap1.tex}
 \input{chap4/chap2.tex}
+\input{chap4/chap3.tex}
+\input{chap4/chap4.tex}
 
 \end{document}
